@@ -1,0 +1,217 @@
+<html>
+ <head>
+   <title> The Ultimate Game! </title>
+   <style>
+     * { padding : 0; margin : 0 }
+     canvas
+       { background : #eee; margin : 0 auto }
+   </style>
+ </head>
+ <body>
+   <canvas id = "arena" height = "500" width = "900"> </canvas>
+   
+   <script>
+   arena = document.getElementById('arena');
+   arenacxt = arena.getContext('2d');
+   var x = arena.width / 2;
+   var y = arena.height - 30;
+   var ballRadius = 10;
+   var dx = 2;
+   var dy = -2;
+   var color = "white";
+   var paddleHeight = 10;
+   var paddleWidth = 75;
+   var paddleX = (arena.width - paddleWidth) / 2;
+   var rightKey = false;
+   var leftKey = false;
+   var brickRowCount = 5;
+   var brickColumnCount = 10;
+   var brickWidth = 75;
+   var brickHeight = 20;
+   var brickPadding = 10;
+   var brickOffsetTop = 30;
+   var brickOffsetLeft = 30;
+   var count = 1;
+   var brickCount = 0;
+   var score = 0;
+   var lifeColor = {
+	   1 : "#0095DD",
+	   2 : "#0095DD",
+	   3 : "#0095DD"
+	   };
+   
+   var bricks = [];
+   for(c=0; c<brickColumnCount; c++) {
+      bricks[c] = [];
+      for(r=0; r<brickRowCount; r++) {
+         bricks[c][r] = { x: 0, y: 0, status: 1 };
+      }
+   }
+   var popSound = new Audio('POP.WAV');
+   var victorySound = new Audio('VICTORY.WAV');
+   var gameOverSound = new Audio('SHUTDOWN.WAV');
+   
+   document.addEventListener("keydown", keyDownHandler, false);
+   document.addEventListener("keyup", keyUpHandler, false);
+   
+   function keyDownHandler(e) {
+	   if(e.keyCode == 39)
+	     rightKey = true;
+	   else if(e.keyCode == 37)
+	     leftKey = true;
+	   }
+   
+   function keyUpHandler(e) {
+	   if(e.keyCode == 39)
+	     rightKey = false;
+	   else if(e.keyCode == 37)
+	     leftKey = false;
+	   }
+	   
+   function collisionDetection() {
+    for(c=0; c<brickColumnCount; c++) {
+        for(r=0; r<brickRowCount; r++) {
+            var b = bricks[c][r];
+            if(b.status == 1) {
+                if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight) {
+                    dy = -dy;
+                    b.status = 0;
+                    color = "blue";
+                    popSound.play();
+                    brickCount++;
+                    score += 10;
+                    if(brickCount == brickRowCount*brickColumnCount) {
+						victorySound.play();
+                        alert("Yaay, you Won! Hi5! \n You scored "+score+ " points!" );
+                        document.location.reload();
+                    }
+                }
+            }
+        }
+    }
+}
+
+   function drawScore() {
+    arenacxt.font = "16px Arial";
+    arenacxt.fillStyle = "#0095DD";
+    arenacxt.fillText("Score: "+score, 8, 20);
+}
+
+   function drawLives() {
+	   arenacxt.beginPath();
+	   arenacxt.arc(arena.width - 90, 15, ballRadius, 0, Math.PI*2);
+	   arenacxt.fillStyle = lifeColor["1"];
+	   arenacxt.fill();
+	   arenacxt.closePath();
+	   arenacxt.beginPath();
+	   arenacxt.arc(arena.width - 65, 15, ballRadius, 0, Math.PI*2);
+	   arenacxt.fillStyle = lifeColor["2"];
+	   arenacxt.fill();
+	   arenacxt.closePath();
+	   arenacxt.beginPath();
+	   arenacxt.arc(arena.width - 40, 15, ballRadius, 0, Math.PI*2);
+	   arenacxt.fillStyle = lifeColor["3"];
+	   arenacxt.fill();
+	   arenacxt.closePath();
+	   
+	   }
+	   
+   function drawPaddle() {
+	   arenacxt.beginPath();
+	   arenacxt.rect(paddleX, arena.height-paddleHeight, paddleWidth, paddleHeight);
+	   arenacxt.fillStyle = "green";
+	   arenacxt.fill();
+	   arenacxt.closePath();
+	   }
+   
+   function drawBall() {
+	   arenacxt.beginPath();
+	   arenacxt.arc(x, y, ballRadius, 0, Math.PI*2);
+	   arenacxt.fillStyle = color;
+	   arenacxt.fill();
+	   arenacxt.closePath();
+	   
+	   }
+	   
+   function drawBricks() {
+      for(c=0; c<brickColumnCount; c++) {
+         for(r=0; r<brickRowCount; r++) {
+			 if(bricks[c][r].status == 1) {
+				 var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                 var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                 bricks[c][r].x = brickX;
+                 bricks[c][r].y = brickY;
+                 arenacxt.beginPath();
+                 arenacxt.rect(brickX, brickY, brickWidth, brickHeight);
+                 arenacxt.fillStyle = "#0095DD";
+                 arenacxt.fill();
+                 arenacxt.closePath();
+				 }
+             
+         }
+      }
+   }
+	   
+   function draw() {
+       arenacxt.clearRect(0, 0, arena.width, arena.height);
+       drawBricks();
+       drawBall();
+       drawPaddle();
+       collisionDetection();
+       drawScore();
+	   drawLives();
+	   
+	   if(x + dx > arena.width - ballRadius || x + dx < 0) {
+         dx = -dx;
+         popSound.play();
+         }
+       if(y + dy < 0) {
+         dy = -dy;
+         popSound.play();
+         }
+        else if(y + dy > arena.height - ballRadius) {
+			if(x > paddleX && x < paddleX + paddleWidth) 
+              {dy = -dy;
+			   color = "red";
+			   popSound.play();
+			  }
+			    	  
+    
+            else {
+				if(count <= 3) {
+					lifeColor[count] = "red";
+					count++;
+					score -= 5;
+                    x = arena.width / 2;
+                    y = arena.height - 30;
+                    paddleX = (arena.width - paddleWidth) / 2;
+                    color = "white";
+                    setTimeout('',10000);
+                    
+                    
+                    
+					}
+				else {
+					gameOverSound.play();
+					alert("GAME OVER");
+                    document.location.reload();
+					}	
+                 
+                 }
+		    }
+         
+       if(rightKey && paddleX < arena.width-paddleWidth)  
+         paddleX += 3;
+       else if(leftKey && paddleX > 0)
+         paddleX -= 3;
+         
+       x += dx;
+	   y += dy;  
+	   }
+   
+   setInterval(draw, 10);
+   
+   </script>
+ </body>
+</html>
+      
